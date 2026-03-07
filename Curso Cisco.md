@@ -1,7 +1,7 @@
 
 ---
 
-##  Resumen Módulo 1: Fundamentos y Tipos de Redes
+##  Resumen Módulo 1: Comunicación en un mundo conectado
 
 En esta parte aprendí que Internet no tiene un "dueño", sino que es una **"red de redes"** que funciona gracias a estándares comunes.
 
@@ -29,7 +29,7 @@ La red se divide en tres categorías de hardware:
 
 ---
 
-##  Resumen Módulo 2: Transmisión de Datos y Conectividad
+##  Resumen Módulo 2: Componentes, tipo y conexiones de red
 
 Aquí el enfoque cambia hacia **cómo** se mueven los datos y cómo nos conectamos al mundo.
 
