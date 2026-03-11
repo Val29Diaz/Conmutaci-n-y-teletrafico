@@ -1,119 +1,144 @@
 
+---
+
+# Análisis de Red y Diagnóstico de Conectividad
+
+## Taller – Conmutación y Teletráfico
+
+Este documento presenta el análisis del comportamiento de la red en una oficina pequeña mediante herramientas de diagnóstico y captura de tráfico como **Wireshark y CMD de Windows**.
+
+Se analizan protocolos como **TCP, UDP, ARP, SNMP, HTTP, DNS e ICMP**, además del recorrido de un **git push hacia GitHub**.
 
 ---
 
-# Parcial – Conmutación y Teletráfico
+# Primer Punto – Análisis de Protocolos de Red
 
-Repositorio con el desarrollo del Parcial de análisis de protocolos de red, cabeceras de paquetes, monitoreo SNMP y diagnóstico de conectividad antes de realizar un `git push` hacia GitHub.
+## a) Comparación entre TCP y UDP en transmisión de video
 
----
+Cuando una aplicación transmite video puede utilizar **TCP o UDP**.
 
-# 1. Comparación entre TCP y UDP en transmisión de video
+### Comparación de cabeceras
 
-## Throughput y control de pérdida de paquetes
+| Protocolo | Tamaño cabecera | Características                  |
+| --------- | --------------- | -------------------------------- |
+| UDP       | 8 bytes         | No establece conexión            |
+| TCP       | mínimo 20 bytes | Confiable y orientado a conexión |
 
-En términos de **throughput (rendimiento)**, **UDP es más eficiente que TCP**. Esto se debe a que su cabecera es más pequeña (8 bytes) y no requiere establecer una conexión previa entre el emisor y el receptor.
+### Throughput
 
-TCP, en cambio, tiene una cabecera mínima de **20 bytes** y utiliza mecanismos adicionales que generan mayor sobrecarga.
+**UDP es más eficiente en throughput**, ya que:
 
-### Anatomía de las cabeceras
+* tiene menor tamaño de cabecera
+* no realiza handshake
+* no utiliza retransmisiones
 
-| Protocolo | Tamaño cabecera | Características                                 |
-| --------- | --------------- | ----------------------------------------------- |
-| UDP       | 8 bytes         | Sin control de conexión ni retransmisión        |
-| TCP       | ≥20 bytes       | Control de flujo, retransmisión y confiabilidad |
+Esto reduce la sobrecarga en la transmisión.
 
 ### Control de pérdida de paquetes
 
-TCP ofrece mayor control sobre la pérdida de paquetes porque incluye:
+**TCP ofrece mayor control sobre la pérdida de paquetes** porque incluye en su cabecera:
 
-* **Número de secuencia**
-* **ACK (Acknowledgment)**
-* **Control de flujo**
-* **Control de congestión**
+* Número de secuencia
+* Número de confirmación (ACK)
+* Control de flujo
+* Control de congestión
 
 Estos mecanismos permiten detectar paquetes perdidos y retransmitirlos.
 
-En aplicaciones de **video en tiempo real**, normalmente se usa **UDP**, ya que es preferible perder algunos paquetes antes que detener la transmisión esperando retransmisiones.
+### Conclusión
+
+En transmisión de **video en tiempo real** suele usarse **UDP**, ya que es preferible perder algunos paquetes antes que detener la transmisión esperando retransmisiones.
 
 ---
 
-# 2. Protocolo que llena la tabla ARP
+# b) Protocolo que llena la tabla ARP
 
-Al ejecutar el comando en Windows:
+Cuando ejecutamos el comando:
 
 ```bash
 arp -a
 ```
 
-se muestra una tabla que relaciona **direcciones IP con direcciones MAC**.
+Windows muestra una tabla con direcciones **IP y MAC**.
 
-## Protocolo utilizado
+### Protocolo responsable
 
-El protocolo encargado de llenar esta tabla es **ARP (Address Resolution Protocol)**.
+El protocolo que llena esta tabla es **ARP (Address Resolution Protocol)**.
 
-## Función principal
+### Función principal
 
-ARP permite **traducir direcciones IP (lógicas) en direcciones MAC (físicas)** dentro de una red local.
+ARP se encarga de **traducir direcciones IP a direcciones MAC dentro de una red local**.
 
 ### Funcionamiento
 
-1. Un host quiere enviar datos a una IP.
-2. Verifica si conoce la MAC en la tabla ARP.
-3. Si no la conoce, envía un **ARP Request** en broadcast.
+1. Un dispositivo quiere enviar datos a una IP.
+2. Verifica si la MAC está en la tabla ARP.
+3. Si no está, envía un **ARP Request** en broadcast.
 4. El dispositivo con esa IP responde con **ARP Reply** indicando su MAC.
 
-## Relación con la trama Ethernet
+### Relación con la trama Ethernet
 
-La trama Ethernet necesita conocer:
+La cabecera Ethernet contiene:
 
-* **MAC destino**
-* **MAC origen**
+| Campo       | Función                      |
+| ----------- | ---------------------------- |
+| MAC destino | Identifica el receptor       |
+| MAC origen  | Identifica el emisor         |
+| Tipo        | Indica protocolo encapsulado |
 
-ARP proporciona la **MAC destino**, que se coloca en la cabecera Ethernet para que el switch entregue la trama al dispositivo correcto.
+ARP permite llenar el campo **MAC destino**, necesario para que la trama Ethernet llegue al dispositivo correcto.
 
 ---
 
-# 3. Diferencias entre SNMPv2c y SNMPv3
+# c) Diferencias entre SNMPv2c y SNMPv3
 
-## Seguridad
+### Seguridad
 
-| Versión | Seguridad                        |
-| ------- | -------------------------------- |
-| SNMPv2c | Community strings en texto plano |
-| SNMPv3  | Autenticación y cifrado          |
+| Versión | Seguridad                            |
+| ------- | ------------------------------------ |
+| SNMPv2c | Usa community strings en texto plano |
+| SNMPv3  | Autenticación y cifrado              |
 
-SNMPv2c utiliza comunidades como **public** o **private**, que funcionan como contraseñas pero se transmiten sin cifrado.
+SNMPv2c utiliza comunidades como:
+
+```
+public
+private
+```
+
+Pero estas se transmiten sin cifrado.
 
 SNMPv3 introduce:
 
-* Autenticación de usuarios
-* Cifrado de mensajes
-* Control de acceso
-
-Esto hace que sea mucho más seguro.
-
-## Tipos de mensajes
-
-SNMPv2c introdujo el mensaje **GetBulk**, que permite obtener grandes cantidades de información de la MIB de forma eficiente.
-
-SNMPv3 mantiene estos mensajes pero agrega distintos niveles de seguridad:
-
-* **noAuthNoPriv**
-* **authNoPriv**
-* **authPriv**
+* autenticación
+* cifrado
+* control de usuarios
 
 ---
 
-# 4. OID y MIB en SNMP
+### Tipo de mensajes
 
-## MIB (Management Information Base)
+SNMPv2c introdujo el mensaje **GetBulk**, que permite consultar grandes cantidades de datos de la MIB.
 
-Es una **base de datos jerárquica** que contiene todos los objetos que pueden ser monitoreados o gestionados en un dispositivo de red.
+SNMPv3 mantiene estos mensajes pero agrega diferentes niveles de seguridad:
 
-## OID (Object Identifier)
+| Nivel        | Característica          |
+| ------------ | ----------------------- |
+| noAuthNoPriv | sin autenticación       |
+| authNoPriv   | autenticación           |
+| authPriv     | autenticación + cifrado |
 
-Es el identificador único que apunta a un objeto dentro de la MIB.
+---
+
+# d) OID y MIB
+
+### MIB
+
+La **MIB (Management Information Base)** es una base de datos jerárquica que contiene información de los dispositivos de red.
+
+### OID
+
+El **OID (Object Identifier)** es el identificador único que apunta a un objeto dentro de la MIB.
 
 Ejemplo:
 
@@ -121,51 +146,64 @@ Ejemplo:
 1.3.6.1.2.1.2.2.1.10
 ```
 
-Este número identifica un objeto específico dentro del árbol de la MIB.
+Este OID puede representar un contador de bytes recibidos.
 
-## Operación SNMP para consultar bytes recibidos
+---
 
-Para conocer la cantidad de bytes recibidos en una interfaz se utiliza la operación:
+### Operación SNMP para consultar bytes recibidos
+
+El administrador debe utilizar la operación:
 
 ```
 GET
 ```
 
-Esto permite consultar directamente el valor actual del contador.
-
-## Por qué no usar Trap
-
-Un **Trap** es una notificación enviada automáticamente cuando ocurre un evento importante, por ejemplo:
-
-* caída de una interfaz
-* error crítico
-* fallo de autenticación
-
-No sería adecuado usar Trap para contar bytes porque ese valor cambia constantemente y generaría demasiadas notificaciones.
+Esto permite consultar el valor actual del contador.
 
 ---
 
-# 5. Análisis de Cabeceras de Red
+### Por qué no usar Trap
 
-## Cabecera Ethernet
+Un **Trap** es una notificación automática enviada cuando ocurre un evento importante.
 
-Una trama Ethernet contiene los siguientes campos principales:
+Ejemplos:
 
-| Campo            | Función                         |
+* caída de una interfaz
+* fallo de autenticación
+* error crítico
+
+No es adecuado usar Trap para contar bytes porque el valor cambia constantemente.
+
+---
+
+# Segundo Punto – Análisis de Captura con Wireshark
+
+Supongamos que encontramos el siguiente paquete HTTP.
+
+```
+Ethernet II
+IPv4
+TCP
+HTTP GET
+```
+
+---
+
+# a) Cabecera Ethernet
+
+| Campo            | Descripción                     |
 | ---------------- | ------------------------------- |
 | MAC destino      | Dirección física del receptor   |
 | MAC origen       | Dirección física del emisor     |
 | Tipo (EtherType) | Indica el protocolo encapsulado |
-| Datos            | Información transportada        |
-| FCS              | Verificación de errores         |
 
-### Valor 0x0800
+### Significado de 0x0800
 
 El valor **0x0800** indica que el protocolo encapsulado es **IPv4**.
 
 ---
 
-## Cabecera IPv4
+# b) Cabecera IPv4
 
 ### Campo Protocolo
 
@@ -177,59 +215,68 @@ Indica qué protocolo de transporte contiene el paquete.
 | 6     | TCP       |
 | 17    | UDP       |
 
-En el ejemplo mostrado aparece **6**, lo que significa que el paquete contiene un **segmento TCP**.
+---
 
 ### Campo TTL (Time To Live)
 
 El TTL indica el número máximo de routers que puede atravesar un paquete.
 
-Cada router reduce el valor en **1**.
+Cada router reduce el TTL en **1**.
+
 Cuando llega a **0**, el paquete se descarta.
 
-Esto evita que los paquetes circulen indefinidamente en la red.
+Esto evita que los paquetes circulen indefinidamente por la red.
 
 ---
 
-## Cabecera TCP
+# c) Cabecera TCP
 
 ### Flag ACK
 
-Indica que el número de confirmación es válido y que se están confirmando datos recibidos previamente.
+Confirma la recepción de datos anteriores.
 
 ### Flag PSH
 
-Indica que los datos deben entregarse inmediatamente a la aplicación receptora.
+Indica que los datos deben enviarse inmediatamente a la aplicación.
+
+---
 
 ### Puerto destino 80
 
-El **puerto 80** corresponde al servicio **HTTP**, utilizado para acceder a páginas web.
+El puerto **80** corresponde al protocolo **HTTP**.
+
+Esto indica que el cliente está intentando acceder a un servidor web.
 
 ---
 
-## Diferencia si fuera IPv6
+# d) Si el paquete fuera IPv6
 
-Si el paquete utilizara IPv6, la cabecera IPv4 sería reemplazada por una **cabecera IPv6**.
+La cabecera IPv4 sería reemplazada por una **cabecera IPv6**.
 
-Una ventaja importante es que IPv6 tiene:
+### Mejora de IPv6
 
-* cabecera de **tamaño fijo (40 bytes)**
+IPv6 tiene:
+
+* cabecera fija de **40 bytes**
 * estructura más simple
 
-Esto permite que los **routers procesen los paquetes más rápido**.
+Esto permite que los routers procesen paquetes más rápido.
 
 ---
 
-# 6. Comando Pathping
+# Tercer Punto – Diagnóstico con herramientas de Windows
 
-## Ejecución del comando
+## Comando
 
-```bash
+```
 pathping 8.8.8.8
 ```
 
-## Información que proporciona
+---
 
-Este comando combina las funciones de:
+# Información que proporciona
+
+Pathping combina funcionalidades de:
 
 * **ping**
 * **tracert**
@@ -237,330 +284,248 @@ Este comando combina las funciones de:
 Permite conocer:
 
 * ruta hacia el destino
-* latencia en cada salto
-* porcentaje de pérdida de paquetes
+* latencia por salto
+* pérdida de paquetes por router
 
 ---
 
-## Proceso de funcionamiento
+# Funcionamiento de pathping
+
+El proceso ocurre en dos fases.
 
 ### Fase 1 – Descubrimiento de ruta
 
-Primero funciona como **tracert**, identificando todos los routers intermedios.
+Funciona como **tracert** para identificar los routers intermedios.
 
 ### Fase 2 – Análisis de pérdida
 
-Luego envía múltiples paquetes ICMP a cada salto para calcular:
+Envía múltiples paquetes ICMP a cada salto para medir:
 
 * latencia promedio
-* pérdida de paquetes
-
-Esto permite identificar dónde se presentan problemas en la red.
+* porcentaje de pérdida
 
 ---
 
-# 7. Monitoreo de Router con SNMP
+# Monitoreo SNMP
 
-Para recorrer todo el árbol MIB del router se puede usar:
-
-```bash
+```
 snmpwalk -v2c -c public 192.168.1.1
 ```
 
-### Parámetros
-
-| Parámetro   | Significado           |
-| ----------- | --------------------- |
-| -v2c        | versión del protocolo |
-| -c public   | comunidad de lectura  |
-| 192.168.1.1 | IP del router         |
-
 ---
 
-## Trap authenticationFailure
+# Trap authenticationFailure
 
-Este Trap se genera cuando alguien intenta acceder al agente SNMP con una **comunidad incorrecta o no autorizada**.
+Este Trap ocurre cuando alguien intenta acceder al agente SNMP con una **comunidad incorrecta**.
 
 ### Ventaja de los Traps
 
-Los Traps permiten que el dispositivo **notifique automáticamente un evento**, evitando que el administrador tenga que consultar constantemente el estado del equipo.
+Los Traps permiten que el dispositivo envíe notificaciones automáticamente.
 
-Esto reduce el tráfico de gestión en la red.
+Esto evita tener que consultar constantemente el estado del router mediante polling.
 
 ---
 
-# 8. Verificación antes de ejecutar git push
+# Cuarto Punto – El viaje de un Commit a GitHub
 
-## Paso 1 — Conectividad básica
+## Flujo general
 
-Para verificar conectividad con GitHub:
+```
+Computador
+   │
+   │ DNS
+   ▼
+Servidor DNS
+   │
+   ▼
+Router local
+   │
+   ▼
+Internet
+   │
+   ▼
+Servidor GitHub
+```
 
-```bash
+---
+
+# Modelo OSI aplicado al git push
+
+| Capa OSI   | Función en el proceso     | Protocolos         |
+| ---------- | ------------------------- | ------------------ |
+| Aplicación | Comunicación con GitHub   | HTTP / HTTPS / DNS |
+| Transporte | Conexión confiable        | TCP                |
+| Red        | Enrutamiento de paquetes  | IP / ICMP          |
+| Enlace     | Comunicación en red local | Ethernet / ARP     |
+| Física     | Transmisión de bits       | Cable / WiFi       |
+
+---
+
+# Paso 1 – Verificación de conectividad
+
+```
 ping github.com
 ```
 
-Este comando verifica principalmente la **capa de red (capa 3 del modelo OSI)** utilizando **ICMP**.
+### Capa OSI
+
+Capa **3 – Red**
+
+### Protocolo
+
+**ICMP**
 
 ---
 
-## Resolución DNS
+# Resolución DNS
 
-Para conocer la dirección IP de github.com se utiliza el protocolo **DNS**.
-
-Se puede verificar con:
-
-```bash
+```
 nslookup github.com
 ```
 
-DNS pertenece a la **capa de aplicación del modelo OSI**.
+### Protocolo
+
+**DNS**
+
+### Capa OSI
+
+Capa **7 – Aplicación**
 
 ---
 
-## Impacto de latencia alta
+# Impacto de latencia alta
 
-Si el ping muestra latencia alta o variable, las métricas afectadas son:
+| Métrica    | Significado                |
+| ---------- | -------------------------- |
+| Latencia   | tiempo de llegada          |
+| Jitter     | variación en latencia      |
+| Throughput | velocidad de transferencia |
 
-* **latencia**
-* **jitter**
-
-Esto podría hacer que el `git push` tarde más tiempo en completarse.
+Una latencia alta puede hacer que el **git push sea más lento**.
 
 ---
 
-# 9. Establecimiento de la conexión
-
-Cuando se ejecuta:
-
-```bash
-git push origin main
-```
+# Paso 2 – Establecimiento de conexión
 
 Git utiliza **HTTPS**, que funciona sobre **TCP**.
 
-## Three Way Handshake
+### Three Way Handshake
 
-El establecimiento de la conexión TCP ocurre en tres pasos:
-
-1. **SYN** → el cliente solicita conexión
-2. **SYN-ACK** → el servidor responde
-3. **ACK** → el cliente confirma
-
----
-
-## Puertos utilizados
-
-| Puerto         | Función                    |
-| -------------- | -------------------------- |
-| Puerto origen  | puerto efímero del cliente |
-| Puerto destino | 443 (HTTPS)                |
-
-Los puertos son gestionados por la **capa de transporte**.
+```
+Cliente → SYN
+Servidor → SYN-ACK
+Cliente → ACK
+```
 
 ---
 
-# 10. Encapsulamiento de datos
+# Puertos utilizados
 
-Cuando los datos del commit se envían por la red, pasan por un proceso de encapsulamiento.
-
-| Capa OSI   | Unidad de datos |
-| ---------- | --------------- |
-| Aplicación | Datos           |
-| Transporte | Segmento        |
-| Red        | Paquete         |
-| Enlace     | Trama           |
-
-Finalmente la trama se envía por la tarjeta de red.
+| Puerto         | Función        |
+| -------------- | -------------- |
+| Puerto origen  | puerto efímero |
+| Puerto destino | 443 (HTTPS)    |
 
 ---
 
-## Congestión en routers
+# Paso 3 – Encapsulamiento de datos
 
-Si un router se congestiona y descarta paquetes:
+## Proceso de encapsulamiento
 
-* el `git push` se vuelve más lento
-* TCP realiza retransmisiones
+```
+Datos (Aplicación)
+        ↓
+Segmento TCP (Transporte)
+        ↓
+Paquete IP (Red)
+        ↓
+Trama Ethernet (Enlace)
+        ↓
+Bits transmitidos (Física)
+```
 
-Para identificar dónde ocurre la pérdida se puede usar:
+---
 
-```bash
+# Congestión en routers
+
+Si un router descarta paquetes:
+
+* el git push se vuelve lento
+* TCP retransmite datos
+
+Comandos para detectar problemas:
+
+```
 tracert github.com
 ```
 
-o
-
-```bash
+```
 pathping github.com
 ```
 
 ---
 
-## Campo que evita bucles
+# Campo que evita bucles
 
-El campo **TTL (Time To Live)** evita que los paquetes circulen indefinidamente en la red.
+El campo **TTL** evita que los paquetes circulen indefinidamente en la red.
 
-Cada router reduce su valor hasta que llega a cero y el paquete se descarta.
-
----
-
-# 11. Confirmación y cierre de la conexión
-
-TCP confirma la recepción de datos mediante **segmentos ACK**.
-
-Si se pierde un paquete, TCP lo retransmite para garantizar la **fiabilidad de la comunicación**.
-
-## Cierre de conexión
-
-El cierre se realiza mediante intercambio de mensajes:
-
-* **FIN**
-* **ACK**
+Cada router reduce su valor hasta llegar a cero.
 
 ---
 
-# Monitoreo del tráfico con SNMP
+# Paso 4 – Confirmación y cierre
 
-Un administrador podría monitorear en el router métricas como:
+### Confirmación de datos
 
-* bytes transmitidos
-* bytes recibidos
-* paquetes descartados
-* errores de interfaz
-* utilización de ancho de banda
+TCP utiliza **ACK** para confirmar la recepción.
 
-Si se requiere cifrado y autenticación, la versión recomendada es **SNMPv3**.
+Si un paquete se pierde, TCP lo retransmite.
+
+Esto garantiza la **fiabilidad**.
 
 ---
 
-# Diagrama simplificado del flujo de red (Git Push)
-
-Este diagrama muestra de forma general el recorrido que siguen los datos cuando se ejecuta el comando `git push`.
+# Cierre de conexión TCP
 
 ```
-[Computador Local]
-        |
-        |  DNS Request
-        v
-     [DNS Server]
-        |
-        |  Resuelve github.com -> IP
-        v
-[Router / Gateway Local]
-        |
-        |  Internet (varios routers)
-        v
-[Servidores de GitHub]
+Cliente → FIN
+Servidor → ACK
+Servidor → FIN
+Cliente → ACK
 ```
 
-### Flujo del proceso
-
-1. El equipo consulta al **servidor DNS** para obtener la IP de `github.com`.
-2. Se verifica la conectividad mediante **ICMP (ping)**.
-3. Se establece una conexión **TCP (puerto 443)** mediante **Three-Way Handshake**.
-4. Los datos del commit se envían mediante **HTTPS**.
-5. GitHub confirma la recepción de los datos.
-
 ---
 
-# Relación con el Modelo OSI
+# Monitoreo SNMP del tráfico
 
-Durante el proceso intervienen varias capas del modelo OSI.
+Un administrador podría monitorear:
 
-| Capa OSI   | Función en el proceso     | Protocolos                |
-| ---------- | ------------------------- | ------------------------- |
-| Aplicación | Comunicación con GitHub   | HTTP / HTTPS / DNS / SNMP |
-| Transporte | Conexión fiable           | TCP                       |
-| Red        | Enrutamiento de paquetes  | IP / ICMP                 |
-| Enlace     | Comunicación en red local | Ethernet / ARP            |
-| Física     | Transmisión de bits       | Cable / WiFi              |
+| Métrica              | Descripción      |
+| -------------------- | ---------------- |
+| Bytes transmitidos   | tráfico enviado  |
+| Bytes recibidos      | tráfico recibido |
+| Paquetes descartados | congestión       |
+| Errores de interfaz  | problemas de red |
 
-Esto muestra cómo cada capa participa en la transmisión de datos desde la aplicación Git hasta los servidores de GitHub.
+Si se requiere cifrado se debe usar:
 
----
-
-# Ejemplo de análisis de paquete en Wireshark
-
-Durante la captura de tráfico se puede observar un paquete como el siguiente:
-
-```
-Frame: 74 bytes
-Ethernet II
-Internet Protocol Version 4
-Transmission Control Protocol
-GET /index.html HTTP/1.1
-```
-
-## Interpretación del paquete
-
-### Capa de enlace (Ethernet)
-
-Campos principales:
-
-* **MAC destino:** aa:bb:cc:dd:ee:ff
-* **MAC origen:** 00:11:22:33:44:55
-* **Tipo:** 0x0800 → indica que el paquete encapsulado es IPv4.
-
----
-
-### Capa de red (IPv4)
-
-Información relevante:
-
-* **IP origen:** 192.168.1.10
-* **IP destino:** 172.217.10.46
-* **TTL:** 128
-* **Protocolo:** 6 → TCP
-
-El TTL indica el número máximo de routers que puede atravesar el paquete antes de ser descartado.
-
----
-
-### Capa de transporte (TCP)
-
-Campos principales:
-
-* **Puerto origen:** 54321
-* **Puerto destino:** 80
-* **Flags:** ACK, PSH
-
-Esto indica que el paquete está enviando datos de una conexión HTTP ya establecida.
-
----
-
-### Capa de aplicación (HTTP)
-
-Datos del segmento TCP:
-
-```
-GET /index.html HTTP/1.1
-```
-
-Esto corresponde a una solicitud HTTP para obtener el archivo **index.html** desde un servidor web.
-
----
-
-# Relación con Teletráfico
-
-En redes de datos existen tres métricas importantes que afectan la comunicación:
-
-| Métrica    | Significado                                         |
-| ---------- | --------------------------------------------------- |
-| Latencia   | Tiempo que tarda un paquete en llegar al destino    |
-| Jitter     | Variación en el tiempo de llegada de paquetes       |
-| Throughput | Cantidad de datos transmitidos por unidad de tiempo |
-
-Si estas métricas presentan valores altos o inestables:
-
-* la conexión puede volverse lenta
-* pueden producirse retransmisiones TCP
-* operaciones como `git push` pueden tardar más tiempo o fallar.
+**SNMPv3**
 
 ---
 
 # Conclusión
 
-El análisis realizado permite comprender cómo interactúan diferentes protocolos de red (ARP, IP, TCP, DNS, SNMP) dentro del modelo OSI para permitir la comunicación entre dispositivos. Además, herramientas de diagnóstico como `ping`, `tracert`, `pathping` y `Wireshark` facilitan la identificación de problemas de conectividad y rendimiento en la red.
+El análisis demuestra cómo múltiples protocolos y herramientas interactúan para permitir la comunicación en redes modernas.
 
----
+El uso de herramientas como **Wireshark, ping, tracert, pathping y SNMP** permite diagnosticar problemas de conectividad y comprender el comportamiento del tráfico en la red.
+
+
+
+
+
+
+
+
+
 
 
