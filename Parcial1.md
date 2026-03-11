@@ -432,5 +432,135 @@ Si se requiere cifrado y autenticación, la versión recomendada es **SNMPv3**.
 
 ---
 
+# Diagrama simplificado del flujo de red (Git Push)
+
+Este diagrama muestra de forma general el recorrido que siguen los datos cuando se ejecuta el comando `git push`.
+
+```
+[Computador Local]
+        |
+        |  DNS Request
+        v
+     [DNS Server]
+        |
+        |  Resuelve github.com -> IP
+        v
+[Router / Gateway Local]
+        |
+        |  Internet (varios routers)
+        v
+[Servidores de GitHub]
+```
+
+### Flujo del proceso
+
+1. El equipo consulta al **servidor DNS** para obtener la IP de `github.com`.
+2. Se verifica la conectividad mediante **ICMP (ping)**.
+3. Se establece una conexión **TCP (puerto 443)** mediante **Three-Way Handshake**.
+4. Los datos del commit se envían mediante **HTTPS**.
+5. GitHub confirma la recepción de los datos.
+
+---
+
+# Relación con el Modelo OSI
+
+Durante el proceso intervienen varias capas del modelo OSI.
+
+| Capa OSI   | Función en el proceso     | Protocolos                |
+| ---------- | ------------------------- | ------------------------- |
+| Aplicación | Comunicación con GitHub   | HTTP / HTTPS / DNS / SNMP |
+| Transporte | Conexión fiable           | TCP                       |
+| Red        | Enrutamiento de paquetes  | IP / ICMP                 |
+| Enlace     | Comunicación en red local | Ethernet / ARP            |
+| Física     | Transmisión de bits       | Cable / WiFi              |
+
+Esto muestra cómo cada capa participa en la transmisión de datos desde la aplicación Git hasta los servidores de GitHub.
+
+---
+
+# Ejemplo de análisis de paquete en Wireshark
+
+Durante la captura de tráfico se puede observar un paquete como el siguiente:
+
+```
+Frame: 74 bytes
+Ethernet II
+Internet Protocol Version 4
+Transmission Control Protocol
+GET /index.html HTTP/1.1
+```
+
+## Interpretación del paquete
+
+### Capa de enlace (Ethernet)
+
+Campos principales:
+
+* **MAC destino:** aa:bb:cc:dd:ee:ff
+* **MAC origen:** 00:11:22:33:44:55
+* **Tipo:** 0x0800 → indica que el paquete encapsulado es IPv4.
+
+---
+
+### Capa de red (IPv4)
+
+Información relevante:
+
+* **IP origen:** 192.168.1.10
+* **IP destino:** 172.217.10.46
+* **TTL:** 128
+* **Protocolo:** 6 → TCP
+
+El TTL indica el número máximo de routers que puede atravesar el paquete antes de ser descartado.
+
+---
+
+### Capa de transporte (TCP)
+
+Campos principales:
+
+* **Puerto origen:** 54321
+* **Puerto destino:** 80
+* **Flags:** ACK, PSH
+
+Esto indica que el paquete está enviando datos de una conexión HTTP ya establecida.
+
+---
+
+### Capa de aplicación (HTTP)
+
+Datos del segmento TCP:
+
+```
+GET /index.html HTTP/1.1
+```
+
+Esto corresponde a una solicitud HTTP para obtener el archivo **index.html** desde un servidor web.
+
+---
+
+# Relación con Teletráfico
+
+En redes de datos existen tres métricas importantes que afectan la comunicación:
+
+| Métrica    | Significado                                         |
+| ---------- | --------------------------------------------------- |
+| Latencia   | Tiempo que tarda un paquete en llegar al destino    |
+| Jitter     | Variación en el tiempo de llegada de paquetes       |
+| Throughput | Cantidad de datos transmitidos por unidad de tiempo |
+
+Si estas métricas presentan valores altos o inestables:
+
+* la conexión puede volverse lenta
+* pueden producirse retransmisiones TCP
+* operaciones como `git push` pueden tardar más tiempo o fallar.
+
+---
+
+# Conclusión
+
+El análisis realizado permite comprender cómo interactúan diferentes protocolos de red (ARP, IP, TCP, DNS, SNMP) dentro del modelo OSI para permitir la comunicación entre dispositivos. Además, herramientas de diagnóstico como `ping`, `tracert`, `pathping` y `Wireshark` facilitan la identificación de problemas de conectividad y rendimiento en la red.
+
+---
 
 
