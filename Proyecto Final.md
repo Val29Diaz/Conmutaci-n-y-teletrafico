@@ -91,7 +91,8 @@ minikube start --cpus=3 --memory=4096 --driver=docker
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
-*Evidencia: Terminal mostrando `minikube start` exitoso y `kubectl version`.*
+<img width="1757" height="1006" alt="Captura de pantalla 2026-05-07 230523" src="https://github.com/user-attachments/assets/cba3b884-c806-4721-ad2e-eaf94fa76118" />
+
 
 ### 5.2 Fase 2: Servidores DHCP
 
@@ -101,7 +102,8 @@ docker network create --driver bridge --subnet=192.168.100.0/24 --ip-range=192.1
 docker run -d --name dhcp-server --network dhcp-net --cap-add=NET_ADMIN \
   -v $PWD/dnsmasq.conf:/etc/dnsmasq.conf andyshinn/dnsmasq:latest -d --conf-file=/etc/dnsmasq.conf
 ```
-Se verificó con un cliente Alpine que obtuvo IP `192.168.100.130`.
+<img width="1457" height="407" alt="Captura de pantalla 2026-05-24 141006" src="https://github.com/user-attachments/assets/8469ce9c-c2de-4211-84eb-1079d29f08a6" />
+
 
 **DHCP en Kubernetes:**
 ```yaml
@@ -130,7 +132,8 @@ spec:
             add: ["NET_ADMIN", "NET_RAW"]
 ```
 
-*Evidencia: Captura de `docker ps` y `kubectl get pods` mostrando ambos servidores DHCP.*
+<img width="1457" height="407" alt="Captura de pantalla 2026-05-24 141006" src="https://github.com/user-attachments/assets/80aba8ad-ff0b-4357-bf50-418fed13d095" />
+<img width="950" height="1192" alt="Captura de pantalla 2026-05-27 175103" src="https://github.com/user-attachments/assets/ff1d7df9-2e77-4af4-963c-bcd9cad717a1" />
 
 ### 5.3 Fase 3: Contenedor YOLO (Detección de Logos)
 
@@ -157,7 +160,8 @@ python detect_logos.py imagen.jpg
 cd ~/proyecto-final/chatbot && source venv_chatbot/bin/activate && python chatbot.py $(cat ~/proyecto-final/yolo-logo/detected_class.txt)
 ```
 
-*Evidencia: Terminal mostrando detección (ej. QEMU: 31.06%) y respuesta del chatbot con audio.*
+<img width="1910" height="1061" alt="Captura de pantalla 2026-05-26 193543" src="https://github.com/user-attachments/assets/8e8418ec-e998-4b91-908b-a2cd5b30b3f1" />
+
 
 ### 5.4 Fase 4: Contenedor Chatbot
 
@@ -174,7 +178,7 @@ docker build -t parrot-audit .
 docker run --rm --network host parrot-audit
 ```
 
-*Evidencia: Salida de nmap mostrando hosts activos y puertos.*
+
 
 ### 5.6 Fase 6: Clúster de Juego (Kubernetes + Agones + SuperTuxKart)
 
@@ -185,7 +189,6 @@ helm repo update
 helm install agones agones/agones --namespace agones-system --create-namespace
 ```
 
-**Imagen del servidor:** Se creó `stk-server:latest` con SuperTuxKart en modo servidor.
 
 **Fleet:**
 ```yaml
@@ -225,7 +228,8 @@ sudo socat UDP4-LISTEN:2759,fork,reuseaddr,bind=0.0.0.0 UDP4:<IP_DEL_POD>:2759 &
 while true; do echo "GAME" | nc -u -w0 192.168.10.2 2759; sleep 0.05; done &
 ```
 
-*Evidencia: `kubectl get gameservers` y `ss -ulpn | grep 2759`.*
+<img width="1613" height="358" alt="Captura de pantalla 2026-05-26 194949" src="https://github.com/user-attachments/assets/f76789ab-3b75-45e8-80af-cd5344d8f7dc" />
+
 
 ### 5.7 Fase 7: Tráfico Competidor (Streaming UDP)
 
@@ -234,8 +238,8 @@ Se creó `stream_video.py`, un script que envía paquetes UDP de 1024 bytes haci
 ```bash
 cd ~/proyecto-final/yolo-logo && source venv/bin/activate && python stream_video.py &
 ```
+<img width="1919" height="1199" alt="Captura de pantalla 2026-05-10 191433" src="https://github.com/user-attachments/assets/75ab9b50-472c-4363-bfa6-66a853ee2165" />
 
-*Evidencia: `tcpdump` o Wireshark mostrando paquetes hacia el puerto 1234.*
 
 ### 5.8 Fase 8: Análisis con Wireshark y Políticas ACL/QoS
 
@@ -286,7 +290,21 @@ interface GigabitEthernet0/0
 **Captura CON QoS:**  
 Se aplicó la política y se repitió la captura. El IO Graph mostró la línea del juego estable y la del streaming reducida.
 
-*Evidencia: `show class-map`, `show policy-map`, y capturas de Wireshark (sin QoS y con QoS).*
+<img width="1912" height="1082" alt="Captura de pantalla 2026-05-24 140625" src="https://github.com/user-attachments/assets/908f516d-213e-480c-8a36-48b67c7883ce" />
+<img width="1058" height="960" alt="Captura de pantalla 2026-05-27 192350" src="https://github.com/user-attachments/assets/1ef39d0f-1a6d-43c8-9e17-cc2436b02c26" />
+
+
+
+<img width="1179" height="1167" alt="Captura de pantalla 2026-05-27 174354" src="https://github.com/user-attachments/assets/a420dc47-6f88-4b9b-97f9-0a7b08c690d1" />
+
+
+<img width="360" height="80" alt="Captura de pantalla 2026-05-27 184935" src="https://github.com/user-attachments/assets/08098cb1-c934-40ee-83e4-f5700d758112" />
+
+<img width="375" height="79" alt="Captura de pantalla 2026-05-27 184943" src="https://github.com/user-attachments/assets/e8db9fe9-9f83-4d30-8529-8f00bc91734d" />
+
+<img width="640" height="631" alt="Captura de pantalla 2026-05-27 191452" src="https://github.com/user-attachments/assets/2df87007-213a-49aa-bb34-20cb0a75ac31" />
+
+<img width="1067" height="958" alt="Captura de pantalla 2026-05-27 193337" src="https://github.com/user-attachments/assets/e22b42c8-71a8-4672-877c-41e3ae3d4e1a" />
 
 ### 5.9 Fase 9: Dashboard Grafana
 
